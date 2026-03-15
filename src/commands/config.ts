@@ -18,6 +18,7 @@ import {
   outputWarning
 } from '../utils/output.js';
 import { PROVIDER_PRESETS } from '../types/index.js';
+import { getDefaultSaveDir, resolveUserPath } from '../utils/paths.js';
 
 /**
  * 识别邮箱服务商
@@ -77,6 +78,13 @@ async function interactiveConfig(): Promise<AccountConfig> {
     },
     {
       type: 'input',
+      name: 'saveDir',
+      message: 'Default save directory:',
+      default: (answers: { name: string }) => getDefaultSaveDir(answers.name || 'default'),
+      filter: (input: string) => resolveUserPath(input)
+    },
+    {
+      type: 'input',
       name: 'imapHost',
       message: 'IMAP server:',
       default: (answers: { user: string }) => {
@@ -131,6 +139,7 @@ async function interactiveConfig(): Promise<AccountConfig> {
     name: answers.name,
     user: answers.user,
     password: answers.password,
+    saveDir: answers.saveDir,
     imap: {
       host: answers.imapHost,
       port: answers.imapPort,
@@ -157,6 +166,7 @@ export function createConfigCommand(): Command {
     .option('--name <name>', 'Account name')
     .option('--user <email>', 'Email address')
     .option('--password <password>', 'Password / App password')
+    .option('--save-dir <dir>', 'Default email save directory')
     .option('--imap-host <host>', 'IMAP server')
     .option('--imap-port <port>', 'IMAP port', parseInt)
     .option('--no-imap-tls', 'Disable TLS for IMAP')
@@ -231,6 +241,7 @@ export function createConfigCommand(): Command {
             name: options.name,
             user: options.user,
             password: options.password,
+            saveDir: options.saveDir ? resolveUserPath(options.saveDir) : getDefaultSaveDir(options.name),
             imap: {
               host: options.imapHost,
               port: options.imapPort || preset?.imap.port || 993,

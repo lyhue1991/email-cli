@@ -1,6 +1,13 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
+import TurndownService from 'turndown';
 import type { AccountConfig, EmailMessage, MailFolder } from '../types/index.js';
+
+const turndownService = new TurndownService({
+  headingStyle: 'atx',
+  bulletListMarker: '-',
+  codeBlockStyle: 'fenced'
+});
 
 /**
  * 格式化邮箱地址
@@ -59,18 +66,19 @@ export function outputAccounts(accounts: AccountConfig[], defaultAccount: string
   }
 
   const table = new Table({
-    head: [chalk.cyan('Name'), chalk.cyan('Email'), chalk.cyan('IMAP Host'), chalk.cyan('SMTP Host'), chalk.cyan('Default')],
-    colWidths: [15, 30, 25, 25, 10]
+    head: [chalk.cyan('Name'), chalk.cyan('Email'), chalk.cyan('Save Dir'), chalk.cyan('IMAP Host'), chalk.cyan('SMTP Host'), chalk.cyan('Default')],
+    colWidths: [15, 28, 36, 24, 24, 10]
   });
 
   accounts.forEach(account => {
     const isDefault = account.name === defaultAccount || account.default;
-    table.push([
-      account.name,
-      account.user,
-      account.imap.host,
-      account.smtp.host,
-      isDefault ? chalk.green('Yes') : '-'
+      table.push([
+        account.name,
+        account.user,
+        truncate(account.saveDir, 33),
+        account.imap.host,
+        account.smtp.host,
+        isDefault ? chalk.green('Yes') : '-'
     ]);
   });
 
@@ -89,6 +97,7 @@ export function outputAccountDetails(account: AccountConfig): void {
     [chalk.cyan('Name'), account.name],
     [chalk.cyan('Email'), account.user],
     [chalk.cyan('Password'), chalk.gray(account.password ? '****' + account.password.slice(-4) : '(not set)')],
+    [chalk.cyan('Save Dir'), account.saveDir],
     [chalk.cyan('IMAP Host'), account.imap.host],
     [chalk.cyan('IMAP Port'), account.imap.port.toString()],
     [chalk.cyan('IMAP TLS'), account.imap.tls ? chalk.green('Yes') : chalk.red('No')],
@@ -106,29 +115,31 @@ export function outputAccountDetails(account: AccountConfig): void {
 /**
  * 输出邮件列表
  */
-export function outputEmails(emails: EmailMessage[], format: 'table' | 'json' | 'raw' = 'table'): void {
+export function outputEmails(emails: EmailMessage[], format: 'table' | 'json' | 'markdown' = 'table'): void {
   if (emails.length === 0) {
     console.log(chalk.yellow('No emails found.'));
     return;
   }
 
   if (format === 'json') {
-    console.log(JSON.stringify(emails, (_key, value) =>
+    console.log(JSON.stringify(emails.map(toDisplayEmail), (_key, value) =>
       typeof value === 'bigint' ? value.toString() : value, 2));
     return;
   }
 
-  if (format === 'raw') {
+  if (format === 'markdown') {
     emails.forEach((email, index) => {
+      const displayEmail = toDisplayEmail(email);
+
       console.log(`\n--- Email ${index + 1} ---`);
-      console.log(`From: ${formatAddress(email.from)}`);
-      console.log(`To: ${formatAddressList(email.to)}`);
-      if (email.cc?.length) console.log(`Cc: ${formatAddressList(email.cc)}`);
-      console.log(`Subject: ${email.subject}`);
-      console.log(`Date: ${email.date}`);
-      console.log(`Flags: ${email.flags.join(', ') || '(none)'}`);
-      if (email.text) console.log(`\nText:\n${email.text}`);
-      if (email.html) console.log(`\nHTML:\n${email.html}`);
+      console.log(`From: ${formatAddress(displayEmail.from)}`);
+      console.log(`To: ${formatAddressList(displayEmail.to)}`);
+      if (displayEmail.cc?.length) console.log(`Cc: ${formatAddressList(displayEmail.cc)}`);
+      console.log(`Subject: ${displayEmail.subject}`);
+      console.log(`Date: ${displayEmail.date}`);
+      console.log(`Flags: ${displayEmail.flags.join(', ') || '(none)'}`);
+      if (displayEmail.text) console.log(`\nText:\n${displayEmail.text}`);
+      if (displayEmail.markdown) console.log(`\nMarkdown:\n${displayEmail.markdown}`);
     });
     return;
   }
@@ -155,6 +166,21 @@ export function outputEmails(emails: EmailMessage[], format: 'table' | 'json' | 
 
   console.log(table.toString());
   console.log(chalk.gray(`\nTotal: ${emails.length} email(s)`));
+}
+
+function htmlToMarkdown(html: string): string {
+  const markdown = turndownService.turndown(html).trim();
+  return markdown || '(Empty markdown content)';
+}
+
+function toDisplayEmail(email: EmailMessage): EmailMessage & { markdown?: string } {
+  const markdown = email.html ? htmlToMarkdown(email.html) : undefined;
+
+  return {
+    ...email,
+    html: undefined,
+    markdown
+  };
 }
 
 /**

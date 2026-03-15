@@ -5,6 +5,7 @@ export interface AccountConfig {
   name: string;              // 账户名称
   user: string;              // 邮箱地址
   password: string;          // 加密存储
+  saveDir: string;           // 默认邮件保存目录
   imap: {
     host: string;
     port: number;            // 默认 993
@@ -77,7 +78,7 @@ export interface ReceiveOptions {
   from?: string;
   subject?: string;
   since?: string;
-  format?: 'table' | 'json' | 'raw';
+  format?: 'table' | 'json' | 'markdown';
   saveDir?: string;
   attachmentsDir?: string;
   fetchBody?: boolean;        // 是否获取正文（会标记已读）

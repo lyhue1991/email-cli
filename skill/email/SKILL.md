@@ -30,8 +30,11 @@ email receive --account <账户名> --unseen --max 20
 # 获取邮件正文并标记已读
 email receive --account <账户名> --body
 
+# 以 Markdown 格式输出正文
+email receive --account <账户名> --format markdown
+
 # 下载附件
-email receive --account <账户名> --body --attachments ./downloads
+email receive --account <账户名> --attachments ./downloads
 
 # 按条件筛选
 email receive --account <账户名> --from sender@example.com --since 2024-01-01
@@ -83,6 +86,7 @@ email config
 email config --name work \
   --user me@company.com \
   --password "app-password" \
+  --save-dir "~/Library/Application Support/email-cli/emails/work" \
   --imap-host imap.company.com \
   --imap-port 993 \
   --smtp-host smtp.company.com \
@@ -123,6 +127,8 @@ email config
 ```bash
 email config --show <账户名>
 ```
+
+账户配置会显示默认 `saveDir`，收取邮件时如果未传 `--save`，会自动使用该目录。
 
 **Step 3: 检查网络连接**
 
@@ -172,9 +178,9 @@ email config --remove <账户名>
 | `--from <email>` | 按发件人筛选 |
 | `--subject <pattern>` | 按主题筛选 |
 | `--since <date>` | 按日期筛选 (YYYY-MM-DD) |
-| `--body` | 获取邮件正文（会标记已读） |
-| `--attachments <dir>` | 下载附件到指定目录 |
-| `--format <format>` | 输出格式：table, json, raw |
+| `--body` | 获取邮件正文（会标记已读；`--format markdown` 时自动启用） |
+| `--attachments <dir>` | 下载附件到指定目录（自动获取正文并标记已读） |
+| `--format <format>` | 输出格式：table, json, markdown |
 
 ### send 命令
 
@@ -191,7 +197,7 @@ email config --remove <账户名>
 
 ## 注意事项
 
-1. **收取邮件不改变状态** - 默认只获取信封信息，不标记已读；使用 `--body` 才会标记已读
+1. **收取邮件不改变状态** - 默认只获取信封信息，不标记已读；使用 `--body` 或 `--format markdown` 才会标记已读
 2. **密码安全** - 配置文件存储明文密码，注意保护配置文件
 3. **应用专用密码** - Gmail、QQ 等邮箱需要使用应用专用密码/授权码
 4. **TLS 证书** - 部分邮箱可能需要忽略证书验证
@@ -212,7 +218,8 @@ email config --list
 email receive                          # 列出最近邮件
 email receive --unseen --max 20        # 查看未读
 email receive --body                   # 获取正文
-email receive --body --attachments ./downloads  # 下载附件
+email receive --format markdown        # Markdown 输出
+email receive --attachments ./downloads         # 下载附件
 
 # 发送邮件
 email send --to user@example.com --subject "Hello" --body "Hi!"

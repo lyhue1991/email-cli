@@ -32,12 +32,14 @@ function createCLI(): Command {
     .addHelpText('after', `
 Examples:
   $ email config                       # Interactive configuration
+  $ email config --show work           # Show account details with save path
   $ email config --list                # List all accounts
   $ email send --to user@example.com --subject "Hello" --body "Hi there!"
   $ email receive                      # List recent emails (no body, keeps unread status)
   $ email receive --unseen --max 20    # List up to 20 unread emails
   $ email receive --body               # Fetch email body (marks as read)
-  $ email receive --body --attachments ./downloads  # Download attachments
+  $ email receive --format markdown         # Show body as Markdown
+  $ email receive --attachments ./downloads         # Download attachments
   $ email folders                      # List mail folders
   $ email list                         # List configured accounts
   $ email --json receive --max 5       # Output recent emails as JSON

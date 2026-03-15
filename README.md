@@ -2,13 +2,22 @@
 
 NPX 命令行邮件工具，支持 IMAP 收取和 SMTP 发送邮件。
 
+这是一个面向邮箱收发场景的 SKILL，基于 NodeJS CLI。
+支持配置多邮箱账户、收取 IMAP 邮件、通过 SMTP 发送邮件，并以命令行方式管理邮件流程。
+
+安装此 SKILL：
+
+```bash
+npx skills add lyhue1991/email-cli
+```
+
 ## 特性
 
 - 支持多账户配置和管理
 - IMAP 收取邮件（支持筛选未读、发件人、主题、日期）
 - SMTP 发送邮件（支持附件、HTML、抄送/密送）
 - 列出邮件文件夹
-- 支持多种输出格式（表格、JSON、raw）
+- 支持多种输出格式（表格、JSON、Markdown）
 - 收取邮件时可选择是否获取正文（不获取正文时保持未读状态）
 
 ## 安装
@@ -36,9 +45,12 @@ email config
 email config --name work \
   --user me@company.com \
   --password "app-password" \
+  --save-dir "~/Library/Application Support/email-cli/emails/work" \
   --imap-host imap.company.com \
   --smtp-host smtp.company.com
 ```
+
+配置完成后，账户会带有默认保存目录；收取邮件时如果不传 `--save`，会自动使用该目录。
 
 ### 2. 发送邮件
 
@@ -68,8 +80,11 @@ email receive --unseen --max 20
 # 获取邮件正文并标记已读
 email receive --body
 
-# 下载附件
-email receive --body --attachments ./downloads
+# 以 Markdown 格式输出正文（自动获取正文并标记已读）
+email receive --format markdown
+
+# 下载附件（自动获取正文并标记已读）
+email receive --attachments ./downloads
 
 # 按条件筛选
 email receive --from boss@company.com --since 2024-01-01
@@ -144,6 +159,12 @@ email [command] --help
 ## 配置存储
 
 配置文件位于 `~/.config/email-cli/email-cli.json`，密码当前以明文存储，文件写入权限为 `600`。
+
+每个账户都会保存一个 `saveDir` 字段，默认值按平台生成：
+
+- macOS: `~/Library/Application Support/email-cli/emails/<account>`
+- Linux: `${XDG_DATA_HOME:-~/.local/share}/email-cli/emails/<account>`
+- Windows: `%LOCALAPPDATA%/email-cli/emails/<account>`
 
 默认优先使用 `defaultAccount`，如果没有设置默认账户，则回退到第一个已配置账户。
 

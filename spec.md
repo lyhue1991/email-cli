@@ -64,6 +64,7 @@ Options:
   --name <name>              账户名称（默认: default）
   --user <email>             邮箱地址
   --password <password>       密码/应用专用密码
+  --save-dir <dir>           默认邮件保存目录
   --imap-host <host>         IMAP 服务器地址
   --imap-port <port>         IMAP 端口（默认: 993）
   --no-imap-tls              禁用 IMAP TLS（默认启用）
@@ -83,6 +84,7 @@ Examples:
   email config --name work \
     --user me@company.com \
     --password "app-password" \
+    --save-dir "~/Library/Application Support/email-cli/emails/work" \
     --imap-host imap.company.com \
     --smtp-host smtp.company.com
 
@@ -92,6 +94,11 @@ Examples:
   # 删除账户
   email config --remove work
 ```
+
+说明：
+- 每个账户保存一个默认 `saveDir`
+- 收取邮件时未显式传入 `--save`，则自动使用账户配置中的 `saveDir`
+- 默认路径按平台生成，并附带账户名目录，便于多账户隔离
 
 ### 2.3 send - 发送邮件
 
@@ -143,9 +150,9 @@ Options:
   --from <email>             按发件人筛选
   --subject <pattern>        按主题筛选（支持模糊匹配）
   --since <date>             收取指定日期之后的邮件（YYYY-MM-DD）
-  --format <format>          输出格式: table, json, raw（默认: table）
-  --body                     获取邮件正文（会标记为已读）
-  --attachments <dir>        下载附件到指定目录（需要配合 --body）
+  --format <format>          输出格式: table, json, markdown（默认: table）
+  --body                     获取邮件正文（会标记为已读；使用 --format markdown 时自动启用）
+  --attachments <dir>        下载附件到指定目录（自动获取正文并标记已读）
 
 Examples:
   # 列出最近 10 封邮件（不获取正文，保持未读状态）
@@ -157,8 +164,11 @@ Examples:
   # 获取正文并标记已读
   email receive --body
 
-  # 获取未读邮件正文并下载附件
-  email receive --unseen --body --attachments ./downloads
+  # 以 Markdown 格式输出正文（自动获取正文）
+  email receive --format markdown
+
+  # 获取未读邮件附件（自动获取正文）
+  email receive --unseen --attachments ./downloads
 
   # 按条件筛选
   email receive --from boss@company.com --since 2024-03-01
@@ -296,7 +306,7 @@ email-cli/
 
 1. **默认只获取信封信息**：`envelope`、`flags`、`bodyStructure`，不获取正文
 2. **不标记已读**：默认收取不改变邮件的 `\Seen` 状态
-3. **`--body` 选项**：获取邮件正文和附件，并标记为已读
+3. **`--body` 选项**：获取邮件正文和附件，并标记为已读；使用 `--format markdown` 时会自动启用
 4. **附件下载**：使用 mailparser 解析邮件源码获取附件
 
 ### 5.2 错误处理

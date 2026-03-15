@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { CONFIG_FILE, ensureConfigDir } from '../utils/crypto.js';
 import type { AppConfig, AccountConfig } from '../types/index.js';
+import { getDefaultSaveDir } from '../utils/paths.js';
 
 const APP_VERSION = '0.1.0';
 
@@ -8,11 +9,27 @@ const APP_VERSION = '0.1.0';
  * 标准化配置对象
  */
 function normalizeConfig(config: Partial<AppConfig>): AppConfig {
+  const accounts = Array.isArray(config.accounts)
+    ? config.accounts.map(account => normalizeAccount(account))
+    : [];
+
   return {
     version: typeof config.version === 'string' && config.version.length > 0 ? config.version : APP_VERSION,
     defaultAccount: typeof config.defaultAccount === 'string' ? config.defaultAccount : '',
-    accounts: Array.isArray(config.accounts) ? config.accounts : [],
+    accounts,
     updatedAt: config.updatedAt
+  };
+}
+
+/**
+ * 标准化账户配置
+ */
+function normalizeAccount(account: AccountConfig): AccountConfig {
+  return {
+    ...account,
+    saveDir: typeof account.saveDir === 'string' && account.saveDir.length > 0
+      ? account.saveDir
+      : getDefaultSaveDir(account.name)
   };
 }
 
@@ -40,7 +57,13 @@ export function loadConfig(): AppConfig {
   try {
     const content = fs.readFileSync(CONFIG_FILE, 'utf8');
     const config = JSON.parse(content) as Partial<AppConfig>;
-    return normalizeConfig(config);
+    const normalizedConfig = normalizeConfig(config);
+
+    if (JSON.stringify(config) !== JSON.stringify(normalizedConfig)) {
+      saveConfig(normalizedConfig);
+    }
+
+    return normalizedConfig;
   } catch {
     // 配置文件损坏，返回默认配置
     return createDefaultConfig();
@@ -95,6 +118,7 @@ export function getAllAccounts(): AccountConfig[] {
  */
 export function saveAccount(account: AccountConfig): void {
   const config = loadConfig();
+  account = normalizeAccount(account);
 
   const existingIndex = config.accounts.findIndex(a => a.name === account.name);
 

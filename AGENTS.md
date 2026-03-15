@@ -139,7 +139,7 @@ export interface AccountConfig {
 }
 
 // 使用 type 关键字定义联合类型
-export type OutputFormat = 'table' | 'json' | 'raw';
+export type OutputFormat = 'table' | 'json' | 'markdown';
 ```
 
 ### 错误处理
